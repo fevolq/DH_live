@@ -3,3 +3,7 @@ mediapipe
 sounddevice
 tqdm
 scikit-learn
+pandas
+torchvision
+tensorboard
+numpy==1.26.4

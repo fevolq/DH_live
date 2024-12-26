@@ -52,6 +52,7 @@ class DINetTrainingOptions():
         self.parser.add_argument('--non_decay', default=10, type=int, help='num of epoches with fixed learning rate')
         self.parser.add_argument('--decay', default=30, type=int, help='num of linearly decay epochs')
         self.parser.add_argument('--checkpoint', type=int, default=2, help='num of checkpoints in training stage')
+        self.parser.add_argument('--extract_checkpoint', action='store_true', help='extract checkpoints')
         self.parser.add_argument('--result_path', type=str, default=r"./asserts/training_model_weight/frame_training_64",
                                  help='result path to save model')
         self.parser.add_argument('--coarse2fine', action='store_true', help='If true, load pretrained model path.')

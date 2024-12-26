@@ -52,7 +52,7 @@ The result (video_info) will be stored in the ./video_data directory.
 ### Run with Audio File
 Run the demo script with an audio file. Make sure the audio file is in .wav format with a sample rate of 16kHz and 16-bit single channel. Replace video_data/test with the path to your video_info file, video_data/audio0.wav with the path to your audio file, and 1.mp4 with the desired output video path:
 ```bash
-python demo.py video_data/test video_data/audio0.wav 1.mp4
+python inference.py video_data/test video_data/audio0.wav 1.mp4
 ```
 ### Real-Time Run with Microphone
 For real-time operation using a microphone, simply run the following command:

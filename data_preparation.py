@@ -1,4 +1,5 @@
-import uuid
+from pathlib import Path
+import time
 import tqdm
 import numpy as np
 import cv2
@@ -130,7 +131,7 @@ def ExtractFromVideo(video_path, circle = False):
         y_max = int(min(vid_height, y_min + crop_size))
 
         frame_face = frame[y_min:y_max, x_min:x_max]
-        print(y_min, y_max, x_min, x_max)
+        # print(y_min, y_max, x_min, x_max)
         # cv2.imshow("s", frame_face)
         # cv2.waitKey(20)
         frame_kps = detect_face_mesh(frame_face)
@@ -139,34 +140,34 @@ def ExtractFromVideo(video_path, circle = False):
     return pts_3d
 
 
-def CirculateVideo(video_in_path, video_out_path, export_imgs = False):
+def CirculateVideo(video_in_path, out_dir, export_imgs = False):
     # 1 视频转换为25FPS, 并折叠循环拼接
-    front_video_path = "front.mp4"
-    back_video_path = "back.mp4"
-    # ffmpeg_cmd = "ffmpeg -i {} -r 25 -ss 00:00:00 -t 00:02:00 -an -loglevel quiet -y {}".format(video_in_path, front_video_path)
-    ffmpeg_cmd = "ffmpeg -i {} -r 25 -an -loglevel quiet -y {}".format(video_in_path, front_video_path)
-    os.system(ffmpeg_cmd)
+    front_video_path = f"{out_dir}/front.mp4"
+    back_video_path = f"{out_dir}/back.mp4"
+    circle_video_path = f'{out_dir}/circle.mp4'
 
-    # front_video_path = video_in_path
+    front_ffmpeg_cmd = "ffmpeg -i {} -r 25 -an -loglevel quiet -y {}".format(video_in_path, front_video_path)
+    print(f'front_ffmpeg_cmd: {front_ffmpeg_cmd}')
+    os.system(front_ffmpeg_cmd)
+    back_ffmpeg_cmd = "ffmpeg -i {} -vf reverse -y {}".format(front_video_path, back_video_path)
+    print(f'back_ffmpeg_cmd: {back_ffmpeg_cmd}')
+    os.system(back_ffmpeg_cmd)
+    circle_ffmpeg_cmd = f'ffmpeg -i {front_video_path} -i {back_video_path} -filter_complex "[0:v][1:v]concat=n=2:v=1:a=0[v]" -map "[v]" {circle_video_path}'
+    print(f'circle_ffmpeg_cmd: {circle_ffmpeg_cmd}')
+    os.system(circle_ffmpeg_cmd)
 
     cap = cv2.VideoCapture(front_video_path)
     vid_width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # 宽度
     vid_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)  # 高度
     frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
     cap.release()
-
-
-    ffmpeg_cmd = "ffmpeg -i {} -vf reverse -y {}".format(front_video_path, back_video_path)
-    os.system(ffmpeg_cmd)
-    ffmpeg_cmd = "ffmpeg -f concat -i {} -c:v copy -y {}".format("video_concat.txt", video_out_path)
-    os.system(ffmpeg_cmd)
-    # exit()
     print("正向视频帧数：", frames)
+
     pts_3d = ExtractFromVideo(front_video_path)
     if type(pts_3d) is np.ndarray and len(pts_3d) == frames:
         print("关键点已提取")
     pts_3d = np.concatenate([pts_3d, pts_3d[::-1]], axis=0)
-    Path_output_pkl = "{}/keypoint_rotate.pkl".format(os.path.dirname(video_out_path))
+    Path_output_pkl = f"{out_dir}/keypoint_rotate.pkl"
     with open(Path_output_pkl, "wb") as f:
         pickle.dump(pts_3d, f)
 
@@ -192,20 +193,20 @@ def CirculateVideo(video_in_path, video_out_path, export_imgs = False):
         left_coincidence = int(max(left, 0))
         right_coincidence = int(min(x_max, vid_width))
         print("人脸活动范围：{}:{}, {}:{}".format(top_coincidence, bottom_coincidence, left_coincidence, right_coincidence))
-        np.savetxt("{}/face_rect.txt".format(os.path.dirname(video_out_path)),
+        np.savetxt(f"{out_dir}/face_rect.txt",
                    np.array([top_coincidence, bottom_coincidence, left_coincidence, right_coincidence]))
-        os.makedirs("{}/image".format(os.path.dirname(video_out_path)))
+        os.makedirs(f"{out_dir}/image")
         ffmpeg_cmd = "ffmpeg -i {} -vf crop={}:{}:{}:{},scale=512:512:flags=neighbor -loglevel quiet -y {}/image/%06d.png".format(
             front_video_path,
             right_coincidence - left_coincidence,
             bottom_coincidence - top_coincidence,
             left_coincidence,
             top_coincidence,
-            os.path.dirname(video_out_path)
+            out_dir
         )
         os.system(ffmpeg_cmd)
 
-    cap = cv2.VideoCapture(video_out_path)
+    cap = cv2.VideoCapture(circle_video_path)
     frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
     cap.release()
     print("循环视频帧数：", frames)
@@ -221,10 +222,9 @@ def main():
     video_name = sys.argv[1]
     print(f"Video name is set to: {video_name}")
 
-    new_data_path = "video_data/{}".format(uuid.uuid1())
-    os.makedirs(new_data_path, exist_ok=True)
-    video_out_path = "{}/circle.mp4".format(new_data_path)
-    CirculateVideo(video_name, video_out_path, export_imgs=False)
+    output_path = f'video_data/{Path(video_name).stem}-{int(time.time())}'
+    os.makedirs(output_path, exist_ok=True)
+    CirculateVideo(video_name, output_path, export_imgs=False)
 
 if __name__ == "__main__":
     main()

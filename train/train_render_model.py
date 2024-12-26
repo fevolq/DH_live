@@ -88,8 +88,6 @@ if __name__ == "__main__":
     net_g_scheduler = get_scheduler(optimizer_g, opt.non_decay, opt.decay)
     net_d_scheduler = get_scheduler(optimizer_d, opt.non_decay, opt.decay)
 
-
-
     train_log_path = os.path.join("checkpoint/{}/log".format("DiNet_five_ref"), "train")
     os.makedirs(train_log_path, exist_ok=True)
     train_logger = SummaryWriter(train_log_path)
@@ -185,13 +183,18 @@ if __name__ == "__main__":
 
         # checkpoint
         if epoch % opt.checkpoint == 0:
-            if not os.path.exists(opt.result_path):
-                os.mkdir(opt.result_path)
-            model_out_path = os.path.join(opt.result_path, 'epoch_{}.pth'.format(epoch))
+            result_path = os.path.join(opt.result_path, os.path.basename(path_))
+            os.makedirs(result_path, exist_ok=True)
+            model_out_path = os.path.join(result_path, f'epoch_{epoch}.pth')
             states = {
                 'epoch': epoch + 1,
                 'state_dict': {'net_g': net_g.state_dict(), 'net_d': net_d.state_dict()},
                 'optimizer': {'net_g': optimizer_g.state_dict(), 'net_d': optimizer_d.state_dict()}
             }
             torch.save(states, model_out_path)
+
+            checkpoint_path = os.path.abspath(os.path.join(os.path.dirname(__file__), f'../checkpoint/{os.path.basename(path_)}'))
+            if opt.extract_checkpoint:
+                os.makedirs(checkpoint_path, exist_ok=True)
+                torch.save(net_g.state_dict(), os.path.join(checkpoint_path, f'epoch_{epoch}.pth'))
             print("Checkpoint saved to {}".format(epoch))
