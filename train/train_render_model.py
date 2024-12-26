@@ -40,17 +40,13 @@ if __name__ == "__main__":
     opt.ref_channel = n_ref * 3 * 2
     opt.batch_size = 4
     opt.result_path = "checkpoint/Dinet_five_ref"
-    opt.resume = False
-    opt.resume_path = None
 
     # set seed
     random.seed(opt.seed)
     np.random.seed(opt.seed)
     torch.cuda.manual_seed(opt.seed)
 
-
     video_list = []
-    # path_ = r"../preparation_bilibili"
     path_ = opt.train_data
     video_list += [os.path.join(path_, i) for i in os.listdir(path_)]
 
@@ -73,8 +69,7 @@ if __name__ == "__main__":
     if opt.resume:
         print('loading checkpoint {}'.format(opt.resume_path))
         checkpoint = torch.load(opt.resume_path)
-        # opt.start_epoch = checkpoint['epoch']
-        # opt.start_epoch = 200
+        opt.start_epoch = checkpoint['epoch']
         net_g_static = checkpoint['state_dict']['net_g']
         net_g.load_state_dict(net_g_static)
         net_d.load_state_dict(checkpoint['state_dict']['net_d'])

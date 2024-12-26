@@ -72,6 +72,8 @@ class DINetTrainingOptions():
         self.parser.add_argument('--D_num_blocks', type=int, default=4, help='num of down blocks in discriminator')
         self.parser.add_argument('--D_block_expansion', type=int, default=64, help='block expansion in discriminator')
         self.parser.add_argument('--D_max_features', type=int, default=256, help='max channels in discriminator')
+        self.parser.add_argument('--resume', action='store_true', help='whether continue training')
+        self.parser.add_argument('--resume_path', type=str, default='', help='the base pth path')
         return self.parser.parse_args()
 
 
